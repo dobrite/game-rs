@@ -1,0 +1,14 @@
+[package]
+
+name = "game"
+version = "0.0.1"
+authors = ["Dave O <davidobrite@gmail.com>"]
+
+[dependencies.gfx]
+git = "https://github.com/gfx-rs/gfx-rs"
+
+[dependencies.glfw]
+git = "https://github.com/bjz/glfw-rs.git"
+
+[dependencies.cgmath]
+git = "http://github.com/bjz/cgmath-rs"
