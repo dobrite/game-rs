@@ -3,6 +3,7 @@ use cgmath::{Matrix, Point3, Vector3};
 use vertex::Vertex;
 
 pub fn create_cube(x: f32, y: f32, z: f32) -> [Vertex, ..36] {
+    // TODO: x, z, y
     [
     //top (0, 0, 1)
     Vertex::new([0.0f32 + x, 0.0f32 + y, 1.0f32 + z], [0f32, 0f32], [255f32, 255f32, 255f32]),
