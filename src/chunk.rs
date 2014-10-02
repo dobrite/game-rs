@@ -27,6 +27,10 @@ impl Chunk {
             blocks: blocks,
         }
     }
+
+    pub fn render(&self) -> &[Vertex] {
+        self.blocks.as_slice()
+    }
 }
 
 pub struct ChunkColumn {
@@ -35,7 +39,7 @@ pub struct ChunkColumn {
 
 impl ChunkColumn {
     pub fn new() -> ChunkColumn {
-        let mut chunks: Vec<Vertex> = Vec::with_capacity((WORLD_HEIGHT / CHUNK_SIZE) as uint);
+        let mut chunks: Vec<Chunk> = Vec::with_capacity((WORLD_HEIGHT / CHUNK_SIZE) as uint);
         for y in range(0, WORLD_HEIGHT / CHUNK_SIZE) {
             chunks.push(Chunk::new())
         };
