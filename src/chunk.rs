@@ -4,8 +4,8 @@ use vertex::Vertex;
 use block::{BlockType, Empty};
 use cube::create_cube;
 
-static CHUNK_SIZE: u8 = 16;
-static WORLD_HEIGHT: u8 = 256;
+static CHUNK_SIZE: u16 = 16;
+static WORLD_HEIGHT: u16 = 256;
 
 pub struct Chunk {
     pub blocks: Vec<Vertex>,
@@ -43,15 +43,18 @@ impl ChunkColumn {
         for y in range(0, WORLD_HEIGHT / CHUNK_SIZE) {
             chunks.push(Chunk::new())
         };
+        println!("{}", chunks.len());
         ChunkColumn {
             chunks: chunks
         }
     }
 
-    pub fn render(&self) {
+    pub fn render(&self, buffer: &mut Vec<Vertex>) {
         for chunk in self.chunks.iter() {
-            chunk.render();
+            buffer.push_all(chunk.render());
+            println!("dumn")
         }
+        println!("{}", buffer.len())
     }
 }
 

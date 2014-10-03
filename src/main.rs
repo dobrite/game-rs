@@ -29,6 +29,8 @@ use cgmath::{Transform, AffineMatrix3};
 use gfx::{Device, DeviceHelper, ToSlice};
 use glfw::Context;
 
+use vertex::Vertex;
+
 pub mod block;
 pub mod chunk;
 pub mod vertex;
@@ -134,8 +136,15 @@ fn main() {
     let frame = gfx::Frame::new(w as u16, h as u16);
 
     let mut device = gfx::GlDevice::new(|s| window.get_proc_address(s));
-    let chunk: chunk::Chunk = chunk::Chunk::new();
-    let data = chunk.blocks.as_slice();
+    //let chunk: chunk::Chunk = chunk::Chunk::new();
+    //let data = chunk.render();
+
+    let mut chunks = Vec::new();
+    let chunk_column: chunk::ChunkColumn = chunk::ChunkColumn::new();
+    chunk_column.render(&mut chunks);
+
+    let data = chunks.as_slice();
+    //let data = chunk.blocks.as_slice();
 
     let buf = device.create_buffer(data.len(), gfx::UsageStatic);
     device.update_buffer(buf, data, 0);
