@@ -49,7 +49,7 @@ version = "0.0.1"
 source = "git+https://github.com/bjz/gl-rs.git#e3c94ac249e42db09ac4f2e7687bc415711c039a"
 dependencies = [
  "khronos_api 0.0.1 (git+https://github.com/bjz/gl-rs.git#e3c94ac249e42db09ac4f2e7687bc415711c039a)",
- "rust-xml 0.1.0 (git+https://github.com/tomaka/rust-xml#fdc021b2bfec7855866b964f459559903c6b7808)",
+ "rust-xml 0.1.0 (git+https://github.com/tomaka/rust-xml#51a102ec2a27763792868848fbb568951ba89473)",
 ]
 
 [[package]]
@@ -82,7 +82,7 @@ dependencies = [
 [[package]]
 name = "rust-xml"
 version = "0.1.0"
-source = "git+https://github.com/tomaka/rust-xml#fdc021b2bfec7855866b964f459559903c6b7808"
+source = "git+https://github.com/tomaka/rust-xml#51a102ec2a27763792868848fbb568951ba89473"
 
 [[package]]
 name = "semver"
