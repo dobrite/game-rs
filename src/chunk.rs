@@ -18,7 +18,7 @@ impl Chunk {
         for y in range(0, CHUNK_SIZE) {
             for z in range(0, CHUNK_SIZE) {
                 for x in range(0, CHUNK_SIZE) {
-                    blocks.push_all(create_cube(x as f32, y as f32, ((cy * CHUNK_SIZE) as f32) + z as f32));
+                    blocks.push_all(create_cube(x as f32, z as f32, ((cy * CHUNK_SIZE) as f32) + y as f32));
                 }
             }
         }

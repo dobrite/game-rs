@@ -181,7 +181,6 @@ fn main() {
         [200.0f32, 200.0, 200.0],
         first_person_settings
     );
-    first_person.direction = [0.0f32, 0.0, 0.0];
 
     let projection = cam::CameraPerspective {
         fov: 70.0f32,
