@@ -1,33 +1,24 @@
-// Copyright 2014 The Gfx-rs Developers.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 #![feature(phase)]
 #![crate_name = "game-rs"]
 
 extern crate cgmath;
 extern crate gfx;
+extern crate piston;
+extern crate glfw_game_window;
 #[phase(plugin)]
 extern crate gfx_macros;
 extern crate glfw;
 extern crate native;
 extern crate time;
 
+use std::f32::consts::PI;
 use cgmath::FixedArray;
 use cgmath::{Matrix, Point3, Vector3};
 use cgmath::{Transform, AffineMatrix3};
 use gfx::{Device, DeviceHelper, ToSlice};
 use glfw::Context;
+use glfw_game_window::WindowGLFW;
+use piston::{cam, Window};
 
 pub mod block;
 pub mod chunk;
@@ -116,24 +107,25 @@ fn start(argc: int, argv: *const *const u8) -> int {
 }
 
 fn main() {
-    let glfw = glfw::init(glfw::FAIL_ON_ERRORS).unwrap();
 
-    glfw.window_hint(glfw::ContextVersion(3, 2));
-    glfw.window_hint(glfw::OpenglForwardCompat(true));
-    glfw.window_hint(glfw::OpenglProfile(glfw::OpenGlCoreProfile));
+    let (win_width, win_height) = (2560, 1600);
+    let mut window_glfw = WindowGLFW::new(
+        piston::shader_version::opengl::OpenGL_3_2,
+        piston::WindowSettings {
+            title: "game-rs".to_string(),
+            size: [win_width, win_height],
+            fullscreen: false,
+            exit_on_esc: true,
+            samples: 4,
+        }
+    );
 
-    let (window, events) = glfw
-        .create_window(640, 480, "Cube example", glfw::Windowed)
-        .expect("Failed to create GLFW window.");
+    window_glfw.capture_cursor(true);
 
-    window.make_current();
-    glfw.set_error_callback(glfw::FAIL_ON_ERRORS);
-    window.set_key_polling(true);
-
-    let (w, h) = window.get_framebuffer_size();
+    let (w, h) = window_glfw.get_size();
     let frame = gfx::Frame::new(w as u16, h as u16);
 
-    let mut device = gfx::GlDevice::new(|s| window.get_proc_address(s));
+    let mut device = gfx::GlDevice::new(|s| window_glfw.window.get_proc_address(s));
     //let chunk: chunk::Chunk = chunk::Chunk::new();
     //let data = chunk.render();
 
@@ -169,17 +161,8 @@ fn main() {
 
     let batch: CubeBatch = graphics.make_batch(&program, &mesh, mesh.to_slice(gfx::TriangleList), &state).unwrap();
 
-    let view: AffineMatrix3<f32> = Transform::look_at(
-        &Point3::new(500f32, 500.0, 500.0),
-        &Point3::new(0f32, 0.0, 0.0),
-        &Vector3::unit_z(),
-    );
-
-    let aspect = w as f32 / h as f32;
-    let proj = cgmath::perspective(cgmath::deg(45.0f32), aspect, 0.1, 1000.0);
-
-    let data = Params {
-        transform: proj.mul_m(&view.mat).into_fixed(),
+    let mut data = Params {
+        transform: piston::vecmath::mat4_id(),
         color: (texture, Some(sampler)),
     };
 
@@ -189,20 +172,53 @@ fn main() {
         stencil: 0,
     };
 
-    while !window.should_close() {
-        glfw.poll_events();
-        for (_, event) in glfw::flush_messages(&events) {
-            match event {
-                glfw::KeyEvent(glfw::KeyEscape, _, glfw::Press, _) =>
-                    window.set_should_close(true),
-                _ => {},
-            }
+    let model = piston::vecmath::mat4_id();
+
+    let mut first_person_settings = cam::FirstPersonSettings::keyboard_wasd();
+    first_person_settings.speed_horizontal = 8.0;
+    first_person_settings.speed_vertical = 4.0;
+    let mut first_person = cam::FirstPerson::new(
+        [200.0f32, 200.0, 200.0],
+        first_person_settings
+    );
+    first_person.direction = [0.0f32, 0.0, 0.0];
+
+    let projection = cam::CameraPerspective {
+        fov: 70.0f32,
+        near_clip: 0.1,
+        far_clip: 1000.0,
+        aspect_ratio: {
+            let (w, h) = window_glfw.get_size();
+            (w as f32) / (h as f32)
         }
+    }.projection();
 
-        graphics.clear(clear_data, gfx::Color | gfx::Depth, &frame);
-        graphics.draw(&batch, &data, &frame);
-        graphics.end_frame();
+    let mut game_iter = piston::EventIterator::new(
+        &mut window_glfw,
+        &piston::EventSettings {
+            updates_per_second: 120,
+            max_frames_per_second: 60
+        }
+    );
 
-        window.swap_buffers();
+    for e in game_iter {
+        match e {
+            piston::Render(args) => {
+                graphics.clear(
+                    clear_data,
+                    gfx::Color | gfx::Depth,
+                    &frame
+                );
+                data.transform = cam::model_view_projection(
+                    model,
+                    first_person.camera(args.ext_dt).orthogonal(),
+                    projection,
+                );
+                graphics.draw(&batch, &data, &frame);
+                graphics.end_frame();
+            },
+            piston::Update(args) => first_person.update(args.dt),
+            piston::Input(e) => first_person.input(&e),
+        }
     }
 }
