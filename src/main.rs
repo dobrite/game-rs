@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #![feature(phase)]
-#![crate_name = "game"]
+#![crate_name = "game-rs"]
 
 extern crate cgmath;
 extern crate gfx;
