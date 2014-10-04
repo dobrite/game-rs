@@ -29,8 +29,6 @@ use cgmath::{Transform, AffineMatrix3};
 use gfx::{Device, DeviceHelper, ToSlice};
 use glfw::Context;
 
-use vertex::Vertex;
-
 pub mod block;
 pub mod chunk;
 pub mod vertex;
