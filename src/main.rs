@@ -172,7 +172,7 @@ fn main() {
     let batch: CubeBatch = graphics.make_batch(&program, &mesh, mesh.to_slice(gfx::TriangleList), &state).unwrap();
 
     let view: AffineMatrix3<f32> = Transform::look_at(
-        &Point3::new(30f32, 30.0, 30.0),
+        &Point3::new(500f32, 500.0, 500.0),
         &Point3::new(0f32, 0.0, 0.0),
         &Vector3::unit_z(),
     );

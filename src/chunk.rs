@@ -13,12 +13,12 @@ pub struct Chunk {
 
 /// YZX
 impl Chunk {
-    pub fn new() -> Chunk {
+    pub fn new(cy: u16) -> Chunk {
         let mut blocks: Vec<Vertex> = Vec::with_capacity((CHUNK_SIZE*CHUNK_SIZE*CHUNK_SIZE*36) as uint);
         for y in range(0, CHUNK_SIZE) {
             for z in range(0, CHUNK_SIZE) {
                 for x in range(0, CHUNK_SIZE) {
-                    blocks.push_all(create_cube(x as f32, y as f32, z as f32));
+                    blocks.push_all(create_cube(x as f32, y as f32, ((cy * CHUNK_SIZE) as f32) + z as f32));
                 }
             }
         }
@@ -41,9 +41,8 @@ impl ChunkColumn {
     pub fn new() -> ChunkColumn {
         let mut chunks: Vec<Chunk> = Vec::with_capacity((WORLD_HEIGHT / CHUNK_SIZE) as uint);
         for y in range(0, WORLD_HEIGHT / CHUNK_SIZE) {
-            chunks.push(Chunk::new())
+            chunks.push(Chunk::new(y as u16))
         };
-        println!("{}", chunks.len());
         ChunkColumn {
             chunks: chunks
         }
@@ -52,9 +51,7 @@ impl ChunkColumn {
     pub fn render(&self, buffer: &mut Vec<Vertex>) {
         for chunk in self.chunks.iter() {
             buffer.push_all(chunk.render());
-            println!("dumn")
         }
-        println!("{}", buffer.len())
     }
 }
 
