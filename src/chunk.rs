@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::cell::Cell;
 
 use vertex::Vertex;
 use block::{BlockType, Empty};
@@ -7,18 +8,43 @@ use cube::create_cube;
 static CHUNK_SIZE: u16 = 16;
 static WORLD_HEIGHT: u16 = 256;
 
+pub enum BlockType {
+    Empty,
+    Grass,
+    Dirt,
+}
+
+pub struct Block {
+    block_type: BlockType,
+}
+
+impl Block {
+    pub fn new() -> Block {
+        Block {
+            block_type: Empty,
+        }
+    }
+}
+
 pub struct Chunk {
-    pub blocks: Vec<Vertex>,
+    pub blocks: [[[BlockType, ..16], ..16], ..16],
+    pub buffers: Cell<Option<Buffer>>,
 }
 
 /// YZX
 impl Chunk {
-    pub fn new(cy: u16) -> Chunk {
+    pub fn new(cx: u16, cz: u16, cy: u16) -> Chunk {
         let mut blocks: Vec<Vertex> = Vec::with_capacity((CHUNK_SIZE*CHUNK_SIZE*CHUNK_SIZE*36) as uint);
         for y in range(0, CHUNK_SIZE) {
             for z in range(0, CHUNK_SIZE) {
                 for x in range(0, CHUNK_SIZE) {
-                    blocks.push_all(create_cube(x as f32, z as f32, ((cy * CHUNK_SIZE) as f32) + y as f32));
+                    blocks.push_all(
+                        create_cube(
+                            ((cx * CHUNK_SIZE) as f32) + x as f32,
+                            ((cz * CHUNK_SIZE) as f32) + z as f32,
+                            ((cy * CHUNK_SIZE) as f32) + y as f32,
+                        )
+                    );
                 }
             }
         }
@@ -38,10 +64,10 @@ pub struct ChunkColumn {
 }
 
 impl ChunkColumn {
-    pub fn new() -> ChunkColumn {
-        let mut chunks: Vec<Chunk> = Vec::with_capacity((WORLD_HEIGHT / CHUNK_SIZE) as uint);
-        for y in range(0, WORLD_HEIGHT / CHUNK_SIZE) {
-            chunks.push(Chunk::new(y as u16))
+    pub fn new(x: u16, z: u16) -> ChunkColumn {
+        let mut chunks: Vec<Chunk> = Vec::new();
+        for y in range(0u16, 5) {
+            chunks.push(Chunk::new(x as u16, z as u16, y as u16))
         };
         ChunkColumn {
             chunks: chunks
@@ -56,17 +82,25 @@ impl ChunkColumn {
 }
 
 pub struct ChunkManager {
-    chunk_columns: HashMap<(i32, i32), ChunkColumn>
+    chunk_columns: HashMap<(u16, u16), ChunkColumn>
 }
 
 impl ChunkManager {
     pub fn new() -> ChunkManager {
+        let mut chunk_columns = HashMap::new();
+        for z in range(0, 3) {
+            for x in range(0, 2) {
+                chunk_columns.insert((x, z), ChunkColumn::new(x, z));
+            }
+        }
         ChunkManager {
-            chunk_columns: HashMap::new()
+            chunk_columns: chunk_columns,
         }
     }
 
-    pub fn add_chunk_column(&mut self, x: i32, z: i32, c: ChunkColumn) {
-        self.chunk_columns.insert((x, z), c);
+    pub fn render(&self, buffer: &mut Vec<Vertex>) {
+        for (_, chunk_column) in self.chunk_columns.iter() {
+            chunk_column.render(buffer);
+        }
     }
 }

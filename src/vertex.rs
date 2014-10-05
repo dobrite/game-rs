@@ -2,13 +2,11 @@ extern crate gfx_macros;
 
 #[vertex_format]
 pub struct Vertex {
-    #[name = "a_Pos"]
+    #[name = "position"]
     pub pos: [f32, ..3],
-
-    #[name = "a_TexCoord"]
+    #[name = "tex_coord"]
     pub tex_coord: [f32, ..2],
-
-    #[name = "a_Color"]
+    #[name = "color"]
     pub color: [f32, ..3],
 }
 
