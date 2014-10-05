@@ -5,6 +5,7 @@ extern crate cgmath;
 extern crate gfx;
 extern crate piston;
 extern crate glfw_game_window;
+extern crate render;
 #[phase(plugin)]
 extern crate gfx_macros;
 extern crate glfw;
@@ -20,91 +21,9 @@ use glfw::Context;
 use glfw_game_window::WindowGLFW;
 use piston::{cam, Window};
 
-pub mod block;
 pub mod chunk;
-pub mod vertex;
 pub mod cube;
-
-// The shader_param attribute makes sure the following struct can be used to
-// pass parameters to a shader. Its argument is the name of the type that will
-// be generated to represent your the program. Search for `CubeBatch` below, to
-// see how it's used.
-#[shader_param(CubeBatch)]
-struct Params {
-    #[name = "projection"]
-    pub projection: [[f32, ..4], ..4],
-    #[name = "view"]
-    pub view: [[f32, ..4], ..4],
-    #[name = "s_texture"]
-    pub s_texture: gfx::shade::TextureParam,
-}
-
-static VERTEX: gfx::ShaderSource = shaders! {
-GLSL_120: b"
-    #version 120
-    uniform mat4 projection, view;
-
-    attribute vec2 tex_coord;
-    attribute vec3 color, position;
-
-    varying vec2 v_tex_coord;
-    varying vec3 v_color;
-
-    void main() {
-        v_tex_coord = tex_coord;
-        v_color = color;
-        gl_Position = projection * view * vec4(position, 1.0);
-    }
-"
-GLSL_150: b"
-    #version 150 core
-    uniform mat4 projection, view;
-
-    in vec2 tex_coord;
-    in vec3 color, position;
-
-    out vec2 v_tex_coord;
-    out vec3 v_color;
-
-    void main() {
-        v_tex_coord = tex_coord;
-        v_color = color;
-        gl_Position = projection * view * vec4(position, 1.0);
-    }
-"
-};
-
-static FRAGMENT: gfx::ShaderSource = shaders!{
-GLSL_120: b"
-    #version 120
-
-    uniform sampler2D s_texture;
-
-    varying vec2 v_tex_coord;
-    varying vec3 v_color;
-
-    void main() {
-        vec4 tex_color = texture2D(s_texture, v_tex_coord);
-        float blend = dot(v_tex_coord-vec2(0.5,0.5), v_tex_coord-vec2(0.5,0.5));
-        gl_FragColor = mix(tex_color, vec4(0.0,0.0,0.0,0.0), blend*1.0);
-    }
-"
-GLSL_150: b"
-    #version 150 core
-    out vec4 out_color;
-
-    uniform sampler2D s_texture;
-
-    in vec2 v_tex_coord;
-    in vec3 v_color;
-
-    void main() {
-        vec4 tex_color = texture(s_texture, v_tex_coord);
-        float blend = dot(v_tex_coord-vec2(0.5,0.5), v_tex_coord-vec2(0.5,0.5));
-        out_color = mix(tex_color, vec4(0.0,0.0,0.0,0.0), blend*1.0);
-    }
-"
-};
+pub mod renderer;
 
 //----------------------------------------
 
@@ -136,18 +55,6 @@ fn main() {
 
     let mut device = gfx::GlDevice::new(|s| window_glfw.window.get_proc_address(s));
 
-    let mut chunks = Vec::new();
-    let chunk_manager: chunk::ChunkManager = chunk::ChunkManager::new();
-    for (_, chunk_column) in chunk_manager.chunk_columns.iter() {
-        chunk_column.render(chunks);
-    }
-
-    let data = chunks.as_slice();
-
-    let buf = device.create_buffer(data.len(), gfx::UsageStatic);
-    device.update_buffer(buf, data, 0);
-    let mesh = gfx::Mesh::from_format(buf, data.len() as u32);
-
     let texture_info = gfx::tex::TextureInfo {
         width: 1,
         height: 1,
@@ -162,14 +69,12 @@ fn main() {
     device.update_texture(&texture, &image_info, [0x20u8, 0xA0u8, 0xC0u8, 0x00u8]).unwrap();
 
     let sampler = device.create_sampler(gfx::tex::SamplerInfo::new(gfx::tex::Bilinear, gfx::tex::Clamp));
-    let program = device.link_program(VERTEX.clone(), FRAGMENT.clone()).unwrap();
+    let program = device.link_program(renderer::VERTEX.clone(), renderer::FRAGMENT.clone()).unwrap();
     let state = gfx::DrawState::new().depth(gfx::state::LessEqual, true);
 
     let mut graphics = gfx::Graphics::new(device);
 
-    let batch: CubeBatch = graphics.make_batch(&program, &mesh, mesh.to_slice(gfx::TriangleList), &state).unwrap();
-
-    let mut params = Params {
+    let mut params = renderer::ShaderParam {
         projection: [[0.0, ..4], ..4],
         view: [[0.0, ..4], ..4],
         s_texture: (texture, Some(sampler)),
@@ -207,10 +112,31 @@ fn main() {
         }
     );
 
+    let mut chunk_manager: chunk::ChunkManager = chunk::ChunkManager::new();
+
+    for cz in range(0u8, 16) {
+        for cx in range(0u8, 16) {
+            // chunk coords or block coords?
+            chunk_manager.create_chunk_column(cx as i32, cz as i32);
+        }
+    }
+
     for e in game_iter {
         match e {
             piston::Render(args) => {
+                let mut staging_buffer = vec![];
+                chunk_manager.fill_buffer(0i32, 0, 0, &mut staging_buffer);
+                let data = staging_buffer.as_slice();
+                let buf = graphics.device.create_buffer(data.len(), gfx::UsageStatic);
+                graphics.device.update_buffer(buf, data, 0);
+                let mesh = gfx::Mesh::from_format(buf, data.len() as u32);
                 graphics.clear(clear_data, gfx::Color | gfx::Depth, &frame);
+                let batch: renderer::CubeBatch = graphics.make_batch(
+                    &program,
+                    &mesh,
+                    mesh.to_slice(gfx::TriangleList),
+                    &state
+                ).unwrap();
                 params.view = first_person.camera(0.0).orthogonal();
                 graphics.draw(&batch, &params, &frame);
                 graphics.end_frame();
