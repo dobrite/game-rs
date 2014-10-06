@@ -34,7 +34,8 @@ pub struct ChunkColumn {
 }
 
 pub struct ChunkManager {
-    chunk_columns: HashMap<(i32, i32), ChunkColumn>
+    chunk_columns: HashMap<(i32, i32), ChunkColumn>,
+    pending_chunk_columns: Vec<ChunkColumn>,
 }
 
 //pub struct Buffer {
@@ -46,6 +47,7 @@ impl ChunkManager {
     pub fn new() -> ChunkManager {
         ChunkManager {
             chunk_columns: HashMap::new(),
+            pending_chunk_columns: Vec::new(),
         }
     }
 
@@ -61,10 +63,10 @@ impl ChunkManager {
                 buffer: Cell::new(None),
             });
         }
-        let c = ChunkColumn {
+        let cc = ChunkColumn {
             chunks: chunks,
         };
-        self.chunk_columns.insert((cx, cz), c);
+        self.chunk_columns.insert((cx, cz), cc);
     }
 
     pub fn fill_buffer(&self, cx: i32, cz: i32, cy: i32, vbuffer: &mut Vec<Vertex>) {
