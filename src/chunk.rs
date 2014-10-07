@@ -21,6 +21,9 @@ pub struct Block {
 pub struct Chunk {
     pub blocks: [[[Block, ..16], ..16], ..16],
     pub buffer: Cell<Option<VertexBuffer>>,
+    //fn create_mesh // iterate through blocks calling create_cube
+    //fn create_cube //create vertexes
+    //fn render translate position and call render_mesh
 }
 
 impl Clone for Chunk {
@@ -50,6 +53,40 @@ impl ChunkManager {
             pending_chunk_columns: Vec::new(),
         }
     }
+
+    /*
+     * pub fun update(f32 dt, vec3 camera_position, vec3 camera_view) {
+     *   update_async_chunker() ?
+     *   update_load_list()
+     *   update_setup_list()
+     *   update_rebuild_list()
+     *   update_flags_list
+     *   update_unload_list
+     *   update_visibility_list(camera_position)
+     *   if(last_camera_position != camera_position || last_camera_view != camera_view) {
+     *     update_render_list()
+     *   }
+     *
+     *   last_camera_position = camera_position
+     *   last_camera_view = camera_view
+     * }
+    */
+
+    /*
+     * pub fn update_load_list() {
+     *   num_chunks_loaded = 0
+     *   iterate over all chunks calling load if not loaded
+     *   break early when num_chunks_loaded limit is reached
+     *   clear update_load_list each frame (reupdated in update_visible_list)
+     * }
+    */
+
+    /*
+     * pub fn update_setup_list() {
+     *   iterate over setup_list calling setup on any chunk loaded and not setup
+     *   clear list each frame (reupdated in update_visiblity_list)
+     * }
+    */
 
     pub fn add_chunk_column(&mut self, cx: i32, cz: i32, c: ChunkColumn) {
         self.chunk_columns.insert((cx, cz), c);
