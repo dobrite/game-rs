@@ -54,7 +54,7 @@ pub struct ChunkColumn {
 }
 
 pub struct ChunkManager {
-    chunk_columns: HashMap<(i32, i32), ChunkColumn>,
+    chunks: HashMap<(i32, i32, i32), Chunk>,
     pending_chunk_columns: Vec<ChunkColumn>,
 }
 
@@ -66,7 +66,7 @@ pub struct ChunkManager {
 impl ChunkManager {
     pub fn new() -> ChunkManager {
         ChunkManager {
-            chunk_columns: HashMap::new(),
+            chunks: HashMap::new(),
             pending_chunk_columns: Vec::new(),
         }
     }
@@ -105,21 +105,19 @@ impl ChunkManager {
      * }
     */
 
-    pub fn add_chunk_column(&mut self, cx: i32, cz: i32, c: ChunkColumn) {
-        self.chunk_columns.insert((cx, cz), c);
+    pub fn create_chunk(&mut self, cx: i32, cz: i32, cy: i32) {
+        self.chunks.insert((cx, cz, cy), Chunk {
+            blocks: [[[Block { block_type: Dirt }, ..16], ..16], ..16],
+            buffer: Cell::new(None),
+        });
     }
 
-    pub fn create_chunk_column(&mut self, cx: i32, cz: i32) {
-        let mut chunks = Vec::new();
-        for i in range(0u8, 16) {
-            chunks.push(Chunk {
-                blocks: [[[Block { block_type: Dirt }, ..16], ..16], ..16],
-                buffer: Cell::new(None),
-            });
+    pub fn each_chunk(&self, f: |x: i32, y: i32, z: i32, c: &Chunk, b: Option<VertexBuffer>|) {
+        for ((cx, cz, cy), c) in self.chunks.iter() {
+            f(x, y, z, c, c.get())
         }
-        let cc = ChunkColumn {
-            chunks: chunks,
-        };
-        self.chunk_columns.insert((cx, cz), cc);
+    }
+
+    pub fn fill_buffer(){
     }
 }

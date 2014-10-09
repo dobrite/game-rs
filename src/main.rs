@@ -114,10 +114,12 @@ fn main() {
 
     let mut chunk_manager: chunk::ChunkManager = chunk::ChunkManager::new();
 
-    for cz in range(0u8, 16) {
-        for cx in range(0u8, 16) {
-            // chunk coords or block coords?
-            chunk_manager.create_chunk_column(cx as i32, cz as i32);
+    for cy in range(0u8, 16) {
+        for cz in range(0u8, 16) {
+            for cx in range(0u8, 16) {
+                // chunk coords or block coords?
+                chunk_manager.create_chunk(cx as i32, cz as i32, cy as i32);
+            }
         }
     }
 
