@@ -113,8 +113,8 @@ impl ChunkManager {
     }
 
     pub fn each_chunk(&self, f: |x: i32, y: i32, z: i32, c: &Chunk, b: Option<VertexBuffer>|) {
-        for ((cx, cz, cy), c) in self.chunks.iter() {
-            f(x, y, z, c, c.get())
+        for (&(cx, cz, cy), chunk) in self.chunks.iter() {
+            f(cx, cy, cz, chunk, chunk.get())
         }
     }
 

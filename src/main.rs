@@ -113,6 +113,8 @@ fn main() {
     );
 
     let mut chunk_manager: chunk::ChunkManager = chunk::ChunkManager::new();
+    let mut staging_buffer = vec![];
+    let mut pending_buffer = vec![];
 
     for cy in range(0u8, 16) {
         for cz in range(0u8, 16) {
@@ -123,10 +125,13 @@ fn main() {
         }
     }
 
+    chunk_manager.each_chunk(|cx, cy, cz, chunk, buffer| {
+        pending_chunks.push((cx, cy, cz, chunk, buffer))
+    });
+
     for e in game_iter {
         match e {
             piston::Render(args) => {
-                let mut staging_buffer = vec![];
                 chunk_manager.fill_buffer(0i32, 0, 0, &mut staging_buffer);
                 let data = staging_buffer.as_slice();
                 let buf = graphics.device.create_buffer(data.len(), gfx::UsageStatic);
@@ -143,7 +148,19 @@ fn main() {
                 graphics.draw(&batch, &params, &frame);
                 graphics.end_frame();
             },
-            piston::Update(args) => first_person.update(args.dt),
+            piston::Update(args) => {
+                pending = pending_chunks.pop();
+                match pending {
+                    Some((cx, cy, cz, chunk, buffer)) => {
+                        //match buffer.get {
+                        //    Some(buffer) => //delete buffer
+                        //    None ={}
+                        //}
+                    }
+                    None => {}
+                }
+                first_person.update(args.dt);
+            },
             piston::Input(e) => first_person.input(&e),
         }
     }
