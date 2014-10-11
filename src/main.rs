@@ -12,14 +12,10 @@ extern crate glfw;
 extern crate native;
 extern crate time;
 
-use std::f32::consts::PI;
-use cgmath::FixedArray;
-use cgmath::{Matrix, Point3, Vector3};
-use cgmath::{Transform, AffineMatrix3};
 use gfx::{Device, DeviceHelper, ToSlice};
-use glfw::Context;
 use glfw_game_window::WindowGLFW;
 use piston::{cam, Window};
+use renderer::VertexBuffer;
 
 pub mod chunk;
 pub mod cube;
@@ -35,8 +31,7 @@ fn start(argc: int, argv: *const *const u8) -> int {
 }
 
 fn main() {
-
-    let (win_width, win_height) = (2560, 1600);
+    let (win_width, win_height) = (800, 600);
     let mut window_glfw = WindowGLFW::new(
         piston::shader_version::opengl::OpenGL_3_2,
         piston::WindowSettings {
@@ -114,11 +109,11 @@ fn main() {
 
     let mut chunk_manager: chunk::ChunkManager = chunk::ChunkManager::new();
     let mut staging_buffer = vec![];
-    let mut pending_buffer = vec![];
+    let mut pending_chunks = vec![];
 
-    for cy in range(0u8, 16) {
-        for cz in range(0u8, 16) {
-            for cx in range(0u8, 16) {
+    for cy in range(0u, chunk::CHUNK_SIZE) {
+        for cz in range(0u, chunk::CHUNK_SIZE) {
+            for cx in range(0u, chunk::CHUNK_SIZE) {
                 // chunk coords or block coords?
                 chunk_manager.create_chunk(cx as i32, cz as i32, cy as i32);
             }
@@ -132,30 +127,40 @@ fn main() {
     for e in game_iter {
         match e {
             piston::Render(args) => {
-                chunk_manager.fill_buffer(0i32, 0, 0, &mut staging_buffer);
-                let data = staging_buffer.as_slice();
-                let buf = graphics.device.create_buffer(data.len(), gfx::UsageStatic);
-                graphics.device.update_buffer(buf, data, 0);
-                let mesh = gfx::Mesh::from_format(buf, data.len() as u32);
                 graphics.clear(clear_data, gfx::Color | gfx::Depth, &frame);
-                let batch: renderer::CubeBatch = graphics.make_batch(
-                    &program,
-                    &mesh,
-                    mesh.to_slice(gfx::TriangleList),
-                    &state
-                ).unwrap();
                 params.view = first_person.camera(0.0).orthogonal();
-                graphics.draw(&batch, &params, &frame);
+                chunk_manager.each_chunk(|_, _, _, _, buffer| {
+                    match buffer {
+                        Some(buffer) => {
+                            graphics.draw(&buffer.batch, &params, &frame);
+                        }
+                        None => {}
+                    }
+                });
                 graphics.end_frame();
             },
             piston::Update(args) => {
-                pending = pending_chunks.pop();
+                let pending = pending_chunks.pop();
                 match pending {
                     Some((cx, cy, cz, chunk, buffer)) => {
-                        //match buffer.get {
-                        //    Some(buffer) => //delete buffer
-                        //    None ={}
-                        //}
+                        chunk.fill_buffer(cx, cy, cz, &mut staging_buffer);
+                        let vbuffer =  {
+                            let data = staging_buffer.as_slice();
+                            let buf = graphics.device.create_buffer(data.len(), gfx::UsageStatic);
+                            graphics.device.update_buffer(buf, data, 0);
+                            let mesh = gfx::Mesh::from_format(buf, data.len() as u32);
+                            VertexBuffer {
+                                buffer: buf,
+                                batch: graphics.make_batch(
+                                    &program,
+                                    &mesh,
+                                    mesh.to_slice(gfx::TriangleList),
+                                    &state
+                                ).unwrap()
+                            }
+                        };
+                        chunk.buffer.set(Some(vbuffer));
+                        staging_buffer.clear();
                     }
                     None => {}
                 }

@@ -4,8 +4,8 @@ use gfx;
 use render;
 
 pub struct VertexBuffer {
-    buffer: gfx::BufferHandle<Vertex>,
-    batch: render::batch::RefBatch<_ShaderParamLink, ShaderParam>
+    pub buffer: gfx::BufferHandle<Vertex>,
+    pub batch: render::batch::RefBatch<_ShaderParamLink, ShaderParam>
 }
 
 #[shader_param(CubeBatch)]

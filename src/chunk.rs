@@ -1,12 +1,11 @@
 use std::collections::HashMap;
 use std::cell::Cell;
-use gfx;
 
 use renderer::{Vertex, VertexBuffer};
 use cube::create_cube;
 
-static CHUNK_SIZE: u16 = 16;
-static WORLD_HEIGHT: u16 = 256;
+pub static CHUNK_SIZE: uint = 8;
+pub static WORLD_HEIGHT: u16 = 256;
 
 pub enum BlockType {
     Empty,
@@ -19,7 +18,7 @@ pub struct Block {
 }
 
 pub struct Chunk {
-    pub blocks: [[[Block, ..16], ..16], ..16],
+    pub blocks: [[[Block, ..CHUNK_SIZE], ..CHUNK_SIZE], ..CHUNK_SIZE],
     pub buffer: Cell<Option<VertexBuffer>>,
     //fn create_mesh // iterate through blocks calling create_cube
     //fn create_cube //create vertexes
@@ -34,13 +33,13 @@ impl Clone for Chunk {
 
 impl Chunk {
     pub fn fill_buffer(&self, cx: i32, cz: i32, cy: i32, vbuffer: &mut Vec<Vertex>) {
-        for y in range(0u8, 16) {
-            for z in range(0u8, 16) {
-                for x in range(0u8, 16) {
+        for y in range(0u, CHUNK_SIZE) {
+            for z in range(0u, CHUNK_SIZE) {
+                for x in range(0u, CHUNK_SIZE) {
                     create_cube(
-                        (cx as f32 * 16f32) + x as f32,
-                        (cz as f32 * 16f32) + z as f32,
-                        (cy as f32 * 16f32) + y as f32,
+                        (cx as f32 * CHUNK_SIZE as f32) + x as f32,
+                        (cz as f32 * CHUNK_SIZE as f32) + z as f32,
+                        (cy as f32 * CHUNK_SIZE as f32) + y as f32,
                         vbuffer,
                     );
                 }
@@ -55,7 +54,6 @@ pub struct ChunkColumn {
 
 pub struct ChunkManager {
     chunks: HashMap<(i32, i32, i32), Chunk>,
-    pending_chunk_columns: Vec<ChunkColumn>,
 }
 
 //pub struct Buffer {
@@ -67,7 +65,6 @@ impl ChunkManager {
     pub fn new() -> ChunkManager {
         ChunkManager {
             chunks: HashMap::new(),
-            pending_chunk_columns: Vec::new(),
         }
     }
 
@@ -107,17 +104,14 @@ impl ChunkManager {
 
     pub fn create_chunk(&mut self, cx: i32, cz: i32, cy: i32) {
         self.chunks.insert((cx, cz, cy), Chunk {
-            blocks: [[[Block { block_type: Dirt }, ..16], ..16], ..16],
+            blocks: [[[Block { block_type: Dirt }, ..CHUNK_SIZE as uint], ..CHUNK_SIZE as uint], ..CHUNK_SIZE as uint],
             buffer: Cell::new(None),
         });
     }
 
-    pub fn each_chunk(&self, f: |x: i32, y: i32, z: i32, c: &Chunk, b: Option<VertexBuffer>|) {
+    pub fn each_chunk<'a>(&'a self, f: |cx: i32, cy: i32, cz: i32, c: &'a Chunk, b: Option<VertexBuffer>|) {
         for (&(cx, cz, cy), chunk) in self.chunks.iter() {
-            f(cx, cy, cz, chunk, chunk.get())
+            f(cx, cy, cz, chunk, chunk.buffer.get())
         }
-    }
-
-    pub fn fill_buffer(){
     }
 }
