@@ -50,8 +50,6 @@ pub struct LineShaderParam {
     pub projection: [[f32, ..4], ..4],
     #[name = "view"]
     pub view: [[f32, ..4], ..4],
-    #[name = "s_texture"]
-    pub s_texture: gfx::shade::TextureParam,
 }
 
 #[vertex_format]
@@ -60,8 +58,6 @@ pub struct LineVertex {
     pub pos: [f32, ..3],
     #[name = "color"]
     pub color: [f32, ..3],
-    #[name = "tex_coord"]
-    pub tex_coord: [f32, ..2],
 }
 
 impl Clone for LineVertex {
@@ -75,7 +71,6 @@ impl LineVertex {
         LineVertex {
             pos: pos,
             color: color,
-            tex_coord: [0.0, 0.0],
         }
     }
 }

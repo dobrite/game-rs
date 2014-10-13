@@ -93,8 +93,8 @@ fn main() {
     let buf = graphics.device.create_buffer(line_data.len(), gfx::UsageStatic);
     graphics.device.update_buffer(buf, line_data, 0);
     let line_mesh = gfx::Mesh::from_format(buf, line_data.len() as u32);
-    let line_batch: CubeBatch = graphics.make_batch(
-        &cube_program,
+    let line_batch: LineBatch = graphics.make_batch(
+        &line_program,
         &line_mesh,
         line_mesh.to_slice(gfx::Line),
         &state
@@ -106,10 +106,9 @@ fn main() {
         s_texture: (texture, Some(sampler)),
     };
 
-    let line_params = renderer::LineShaderParam {
+    let mut line_params = renderer::LineShaderParam {
         projection: [[0.0, ..4], ..4],
         view: [[0.0, ..4], ..4],
-        s_texture: (texture, Some(sampler)),
     };
 
     let clear_data = gfx::ClearData {
@@ -126,7 +125,7 @@ fn main() {
         first_person_settings
     );
 
-    cube_params.projection = cam::CameraPerspective {
+    let projection = cam::CameraPerspective {
         fov: 70.0f32,
         near_clip: 0.1,
         far_clip: 1000.0,
@@ -135,6 +134,9 @@ fn main() {
             (w as f32) / (h as f32)
         }
     }.projection();
+
+    cube_params.projection = projection;
+    line_params.projection = projection;
 
     let mut game_iter = piston::EventIterator::new(
         &mut window_glfw,
@@ -166,6 +168,7 @@ fn main() {
             piston::Render(args) => {
                 graphics.clear(clear_data, gfx::Color | gfx::Depth, &frame);
                 cube_params.view = first_person.camera(0.0).orthogonal();
+                line_params.view = first_person.camera(0.0).orthogonal();
                 chunk_manager.each_chunk(|_, _, _, _, buffer| {
                     match buffer {
                         Some(buffer) => {
@@ -174,8 +177,7 @@ fn main() {
                         None => {}
                     }
                 });
-                //graphics.draw(&line_batch, &line_params, &frame);
-                graphics.draw(&line_batch, &cube_params, &frame);
+                graphics.draw(&line_batch, &line_params, &frame);
                 graphics.end_frame();
             },
             piston::Update(args) => {
