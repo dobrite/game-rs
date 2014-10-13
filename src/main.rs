@@ -121,7 +121,7 @@ fn main() {
     first_person_settings.speed_horizontal = 100.0;
     first_person_settings.speed_vertical = 100.0;
     let mut first_person = cam::FirstPerson::new(
-        [2.0f32, 2.0, 2.0],
+        [-20.0f32, 20.0, -20.0],
         first_person_settings
     );
 
@@ -172,7 +172,7 @@ fn main() {
                 chunk_manager.each_chunk(|_, _, _, _, buffer| {
                     match buffer {
                         Some(buffer) => {
-                            //graphics.draw(&buffer.batch, &cube_params, &frame);
+                            graphics.draw(&buffer.batch, &cube_params, &frame);
                         }
                         None => {}
                     }

@@ -4,7 +4,7 @@ use std::cell::Cell;
 use renderer::{CubeVertex, VertexBuffer};
 use cube::create_cube;
 
-pub const CHUNK_SIZE: uint = 8;
+pub const CHUNK_SIZE: uint = 4;
 pub const WORLD_HEIGHT: u16 = 256;
 
 pub enum BlockType {
