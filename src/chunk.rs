@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::cell::Cell;
 
-use renderer::{Vertex, VertexBuffer};
+use renderer::{CubeVertex, VertexBuffer};
 use cube::create_cube;
 
 pub const CHUNK_SIZE: uint = 8;
@@ -32,7 +32,7 @@ impl Clone for Chunk {
 }
 
 impl Chunk {
-    pub fn fill_buffer(&self, cx: i32, cz: i32, cy: i32, vbuffer: &mut Vec<Vertex>) {
+    pub fn fill_buffer(&self, cx: i32, cz: i32, cy: i32, vbuffer: &mut Vec<CubeVertex>) {
         for y in range(0u, CHUNK_SIZE) {
             for z in range(0u, CHUNK_SIZE) {
                 for x in range(0u, CHUNK_SIZE) {
@@ -57,7 +57,7 @@ pub struct ChunkManager {
 }
 
 //pub struct Buffer {
-//    buffer: gfx::BufferHandle<Vertex>,
+//    buffer: gfx::BufferHandle<CubeVertex>,
 //    batch: render::batch::RefBatch<_ShaderParamLink, ShaderParam>
 //}
 

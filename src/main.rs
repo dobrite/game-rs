@@ -15,7 +15,8 @@ extern crate time;
 use gfx::{Device, DeviceHelper, ToSlice};
 use glfw_game_window::WindowGLFW;
 use piston::{cam, Window};
-use renderer::VertexBuffer;
+use renderer::{VertexBuffer, LineBatch, CubeBatch};
+use renderer::LineVertex;
 
 pub mod chunk;
 pub mod cube;
@@ -50,6 +51,17 @@ fn main() {
 
     let mut device = gfx::GlDevice::new(|s| window_glfw.window.get_proc_address(s));
 
+    let line_vertex_data = vec![
+        LineVertex::new([0.0, 0.0, 0.0], [1.0, 0.0, 0.0]),
+        LineVertex::new([1.0, 0.0, 0.0], [1.0, 0.0, 0.0]),
+        LineVertex::new([0.0, 0.0, 0.0], [0.0, 1.0, 0.0]),
+        LineVertex::new([0.0, 1.0, 0.0], [0.0, 1.0, 0.0]),
+        LineVertex::new([0.0, 0.0, 0.0], [0.0, 0.0, 1.0]),
+        LineVertex::new([0.0, 0.0, 1.0], [0.0, 0.0, 1.0]),
+    ];
+
+    let line_data = line_vertex_data.as_slice();
+
     let texture_info = gfx::tex::TextureInfo {
         width: 1,
         height: 1,
@@ -64,12 +76,37 @@ fn main() {
     device.update_texture(&texture, &image_info, [0x20u8, 0xA0u8, 0xC0u8, 0x00u8]).unwrap();
 
     let sampler = device.create_sampler(gfx::tex::SamplerInfo::new(gfx::tex::Bilinear, gfx::tex::Clamp));
-    let program = device.link_program(renderer::VERTEX.clone(), renderer::FRAGMENT.clone()).unwrap();
+    let cube_program = device.link_program(
+        renderer::CUBE_VERTEX.clone(),
+        renderer::CUBE_FRAGMENT.clone(),
+    ).unwrap();
+
+    let line_program = device.link_program(
+        renderer::LINE_VERTEX.clone(),
+        renderer::LINE_FRAGMENT.clone(),
+    ).unwrap();
+
     let state = gfx::DrawState::new().depth(gfx::state::LessEqual, true);
 
     let mut graphics = gfx::Graphics::new(device);
 
-    let mut params = renderer::ShaderParam {
+    let buf = graphics.device.create_buffer(line_data.len(), gfx::UsageStatic);
+    graphics.device.update_buffer(buf, line_data, 0);
+    let line_mesh = gfx::Mesh::from_format(buf, line_data.len() as u32);
+    let line_batch: CubeBatch = graphics.make_batch(
+        &cube_program,
+        &line_mesh,
+        line_mesh.to_slice(gfx::Line),
+        &state
+    ).unwrap();
+
+    let mut cube_params = renderer::CubeShaderParam {
+        projection: [[0.0, ..4], ..4],
+        view: [[0.0, ..4], ..4],
+        s_texture: (texture, Some(sampler)),
+    };
+
+    let line_params = renderer::LineShaderParam {
         projection: [[0.0, ..4], ..4],
         view: [[0.0, ..4], ..4],
         s_texture: (texture, Some(sampler)),
@@ -85,11 +122,11 @@ fn main() {
     first_person_settings.speed_horizontal = 100.0;
     first_person_settings.speed_vertical = 100.0;
     let mut first_person = cam::FirstPerson::new(
-        [200.0f32, 200.0, 200.0],
+        [2.0f32, 2.0, 2.0],
         first_person_settings
     );
 
-    params.projection = cam::CameraPerspective {
+    cube_params.projection = cam::CameraPerspective {
         fov: 70.0f32,
         near_clip: 0.1,
         far_clip: 1000.0,
@@ -128,15 +165,17 @@ fn main() {
         match e {
             piston::Render(args) => {
                 graphics.clear(clear_data, gfx::Color | gfx::Depth, &frame);
-                params.view = first_person.camera(0.0).orthogonal();
+                cube_params.view = first_person.camera(0.0).orthogonal();
                 chunk_manager.each_chunk(|_, _, _, _, buffer| {
                     match buffer {
                         Some(buffer) => {
-                            graphics.draw(&buffer.batch, &params, &frame);
+                            //graphics.draw(&buffer.batch, &cube_params, &frame);
                         }
                         None => {}
                     }
                 });
+                //graphics.draw(&line_batch, &line_params, &frame);
+                graphics.draw(&line_batch, &cube_params, &frame);
                 graphics.end_frame();
             },
             piston::Update(args) => {
@@ -152,7 +191,7 @@ fn main() {
                             VertexBuffer {
                                 buffer: buf,
                                 batch: graphics.make_batch(
-                                    &program,
+                                    &cube_program,
                                     &mesh,
                                     mesh.to_slice(gfx::TriangleList),
                                     &state

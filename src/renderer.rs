@@ -4,12 +4,12 @@ use gfx;
 use render;
 
 pub struct VertexBuffer {
-    pub buffer: gfx::BufferHandle<Vertex>,
-    pub batch: render::batch::RefBatch<_ShaderParamLink, ShaderParam>
+    pub buffer: gfx::BufferHandle<CubeVertex>,
+    pub batch: render::batch::RefBatch<_CubeShaderParamLink, CubeShaderParam>
 }
 
 #[shader_param(CubeBatch)]
-pub struct ShaderParam {
+pub struct CubeShaderParam {
     #[name = "projection"]
     pub projection: [[f32, ..4], ..4],
     #[name = "view"]
@@ -19,7 +19,7 @@ pub struct ShaderParam {
 }
 
 #[vertex_format]
-pub struct Vertex {
+pub struct CubeVertex {
     #[name = "position"]
     pub pos: [f32, ..3],
     #[name = "tex_coord"]
@@ -28,15 +28,15 @@ pub struct Vertex {
     pub color: [f32, ..3],
 }
 
-impl Clone for Vertex {
-    fn clone(&self) -> Vertex {
+impl Clone for CubeVertex {
+    fn clone(&self) -> CubeVertex {
         *self
     }
 }
 
-impl Vertex {
-    pub fn new(pos: [f32, ..3], tex_coord: [f32, ..2], color: [f32, ..3]) -> Vertex {
-        Vertex {
+impl CubeVertex {
+    pub fn new(pos: [f32, ..3], tex_coord: [f32, ..2], color: [f32, ..3]) -> CubeVertex {
+        CubeVertex {
             pos: pos,
             tex_coord: tex_coord,
             color: color,
@@ -44,7 +44,43 @@ impl Vertex {
     }
 }
 
-pub static VERTEX: gfx::ShaderSource = shaders! {
+#[shader_param(LineBatch)]
+pub struct LineShaderParam {
+    #[name = "projection"]
+    pub projection: [[f32, ..4], ..4],
+    #[name = "view"]
+    pub view: [[f32, ..4], ..4],
+    #[name = "s_texture"]
+    pub s_texture: gfx::shade::TextureParam,
+}
+
+#[vertex_format]
+pub struct LineVertex {
+    #[name = "position"]
+    pub pos: [f32, ..3],
+    #[name = "color"]
+    pub color: [f32, ..3],
+    #[name = "tex_coord"]
+    pub tex_coord: [f32, ..2],
+}
+
+impl Clone for LineVertex {
+    fn clone(&self) -> LineVertex {
+        *self
+    }
+}
+
+impl LineVertex {
+    pub fn new(pos: [f32, ..3], color: [f32, ..3]) -> LineVertex {
+        LineVertex {
+            pos: pos,
+            color: color,
+            tex_coord: [0.0, 0.0],
+        }
+    }
+}
+
+pub static CUBE_VERTEX: gfx::ShaderSource = shaders! {
 GLSL_120: b"
     #version 120
     uniform mat4 projection, view;
@@ -79,7 +115,7 @@ GLSL_150: b"
 "
 };
 
-pub static FRAGMENT: gfx::ShaderSource = shaders!{
+pub static CUBE_FRAGMENT: gfx::ShaderSource = shaders!{
 GLSL_120: b"
     #version 120
 
@@ -107,6 +143,57 @@ GLSL_150: b"
         vec4 tex_color = texture(s_texture, v_tex_coord);
         float blend = dot(v_tex_coord-vec2(0.5,0.5), v_tex_coord-vec2(0.5,0.5));
         out_color = mix(tex_color, vec4(0.0,0.0,0.0,0.0), blend*1.0);
+    }
+"
+};
+
+pub static LINE_VERTEX: gfx::ShaderSource = shaders! {
+GLSL_120: b"
+    #version 120
+    uniform mat4 projection, view;
+
+    attribute vec3 color, position;
+
+    varying vec3 v_color;
+
+    void main() {
+        v_color = color;
+        gl_Position = projection * view * vec4(position, 1.0);
+    }
+"
+GLSL_150: b"
+    #version 150 core
+    uniform mat4 projection, view;
+
+    in vec3 color, position;
+
+    out vec3 v_color;
+
+    void main() {
+        v_color = color;
+        gl_Position = projection * view * vec4(position, 1.0);
+    }
+"
+};
+
+pub static LINE_FRAGMENT: gfx::ShaderSource = shaders!{
+GLSL_120: b"
+    #version 120
+
+    varying vec3 v_color;
+
+    void main() {
+        gl_FragColor = vec4(v_color, 1.0);
+    }
+"
+GLSL_150: b"
+    #version 150 core
+    out vec4 out_color;
+
+    in vec3 v_color;
+
+    void main() {
+        out_color = vec4(v_color, 1.0);
     }
 "
 };
