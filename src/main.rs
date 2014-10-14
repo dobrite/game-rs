@@ -118,10 +118,10 @@ fn main() {
     };
 
     let mut first_person_settings = cam::FirstPersonSettings::keyboard_wasd();
-    first_person_settings.speed_horizontal = 100.0;
-    first_person_settings.speed_vertical = 100.0;
+    first_person_settings.speed_horizontal = 50.0;
+    first_person_settings.speed_vertical = 50.0;
     let mut first_person = cam::FirstPerson::new(
-        [-20.0f32, 20.0, -20.0],
+        [20.0f32, 0.0, 20.0],
         first_person_settings
     );
 
